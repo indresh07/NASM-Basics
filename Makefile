@@ -8,36 +8,31 @@ srcDir := src
 lstDir := list
 binDir := bin
 files := matrix palindrome encryption
-
-define generateObject
-	nasm -f elf32 -o $(objDir)/$1.o $(srcDir)/$1.asm
-endef
-
-define generateLst
-	nasm -f elf32 -g -F stabs -o $(objDir)/$(1).o $(srcDir)/$(1).asm -l $(lstDir)/$(1).lst
-endef
-
-define generateExecutable
-	ld -m elf_i386 -o $(binDir)/$(1) $(objDir)/$(1).o $(incDir)/io.o
-endef
-
 all:
 	@make --no-print-directory lst
+	@make --no-print-directory object
 	@make --no-print-directory executable
 
-executable: $(addprefix $(objDir)/,$(addsuffix .o,$(files))) | $(binDir)
-	@echo -n "Generating executable files... "
-	@$(foreach file,$(files),$(call generateExecutable,$(file)) && ) true
+executable: $(files:%=$(binDir)/%)
+
+lst: $(files:%=$(lstDir)/%.lst)
+
+object: $(files:%=$(objDir)/%.o)
+
+$(objDir)/%.o : $(srcDir)/%.asm | $(objDir)
+	@echo -n "Generating $(notdir $@)... "
+	@nasm -f elf32 -o $@ $<
 	@echo "Done"
 
-lst: $(addprefix $(srcDir)/,$(addsuffix .asm,$(files))) | $(objDir) $(lstDir)
-	@echo -n "Generating object and lst files... "
-	@$(foreach file,$(files),$(call generateLst,$(file)) && ) true
+$(lstDir)/%.lst: $(srcDir)/%.asm  | $(lstDir)
+	@echo -n "Generating $(notdir $@)... "
+	@nasm -f elf32 -g -F stabs -l $@ $<
 	@echo "Done"
+	@rm -f $(srcDir)/*.o
 
-object: $(addprefix $(srcDir)/,$(addsuffix .asm,$(files))) | $(objDir)
-	@echo -n "Generating object files... "
-	@$(foreach file,$(files),$(call generateObject,$(file)) && ) true
+$(binDir)/% : $(objDir)/%.o  | $(binDir)
+	@echo -n "Generating $(notdir $@)... "
+	@ld -m elf_i386 -o $@ $< $(incDir)/io.o
 	@echo "Done"
 
 $(objDir):
@@ -53,5 +48,8 @@ clean:
 	@echo -n "Deleting files... "
 	@rm -f $(binDir)/*
 	@rm -f $(objDir)/*
-	@rm -f list/*
+	@rm -f $(lstDir)/*
+	@rmdir $(binDir)
+	@rmdir $(objDir)
+	@rmdir $(lstDir)
 	@echo "Done"
