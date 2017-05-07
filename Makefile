@@ -1,7 +1,3 @@
-#Error : Makefile:28: *** recipe commences before first target.  Stop.
-#		 Makefile:33: *** recipe commences before first target.  Stop.
-#		 Makefile:38: *** recipe commences before first target.  Stop.
-
 objDir := obj
 incDir := include
 srcDir := src
